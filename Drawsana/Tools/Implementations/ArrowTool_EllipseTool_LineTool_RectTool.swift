@@ -31,3 +31,14 @@ public class EllipseTool: DrawingToolForShapeWithTwoPoints {
   public override var name: String { return "Ellipse" }
   public override func makeShape() -> ShapeType { return EllipseShape() }
 }
+
+public class MeasureTool: DrawingToolForShapeWithTwoPoints {
+    public override var name: String { return "TwoArrows" }
+    public override func makeShape() -> ShapeType {
+        let shape = LineShape()
+        shape.hasTwoArrows = true
+        shape.arrowStyle = .standard
+        return shape
+    }
+}
+

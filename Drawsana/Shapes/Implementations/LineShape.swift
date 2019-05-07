@@ -37,6 +37,7 @@ public class LineShape:
   public var dashLengths: [CGFloat]?
   public var arrowStyle: ArrowStyle?
   public var transform: ShapeTransform = .identity
+  public var hasTwoArrows = false
 
   public init() {
   }
@@ -114,17 +115,29 @@ public class LineShape:
     let radius = strokeWidth * 4
 
     // Nudge arrow out past end of line a little so it doesn't let the line below show through when it's thick
-    let arrowOffset = CGPoint(angle: angle, radius: strokeWidth * 2)
+    let forwardArrowOffset = CGPoint(angle: angle, radius: strokeWidth * 2)
+    let backwardArrawOffset = CGPoint(angle: angle, radius: strokeWidth)
 
-    let startPoint = b + arrowOffset
-    let point1 = b + CGPoint(angle: angle + arcAmount / 2 + CGFloat.pi, radius: radius) + arrowOffset
-    let point2 = b + CGPoint(angle: angle - arcAmount / 2 + CGFloat.pi, radius: radius) + arrowOffset
+    let startForwardPoint = b + forwardArrowOffset
+    let forwardPoint1 = b + CGPoint(angle: angle + arcAmount / 2 + CGFloat.pi, radius: radius) + forwardArrowOffset
+    let forwardPoint2 = b + CGPoint(angle: angle - arcAmount / 2 + CGFloat.pi, radius: radius) + forwardArrowOffset
+
+    let startBackwardPoint = a - backwardArrawOffset
+    let backwardPoint1 = a + CGPoint(angle: angle + arcAmount / 2, radius: radius) - backwardArrawOffset
+    let backwardPoint2 = a + CGPoint(angle: angle - arcAmount / 2, radius: radius) - backwardArrawOffset
 
     context.setLineWidth(0)
     context.setFillColor(strokeColor.cgColor)
-    context.move(to: startPoint)
-    context.addLine(to: point1)
-    context.addLine(to: point2)
+    context.move(to: startForwardPoint)
+    context.addLine(to: forwardPoint1)
+    context.addLine(to: forwardPoint2)
+    if hasTwoArrows{
+        if sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2)) >= radius{
+            context.move(to: startBackwardPoint)
+            context.addLine(to: backwardPoint1)
+            context.addLine(to: backwardPoint2)
+        }
+    }
     context.fillPath()
   }
 }
