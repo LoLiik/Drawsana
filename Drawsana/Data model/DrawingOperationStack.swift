@@ -56,6 +56,11 @@ public class DrawingOperationStack {
     redoStack.removeLast()
     delegate?.drawingOperationStackDidRedo(self, operation: operation)
   }
+
+    public func clearOperationsHistory() {
+        undoStack.removeAll()
+        redoStack.removeAll()
+    }
 }
 
 public protocol DrawingOperationStackDelegate: AnyObject {
