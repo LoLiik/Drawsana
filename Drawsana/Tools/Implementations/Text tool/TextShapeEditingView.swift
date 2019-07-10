@@ -14,10 +14,10 @@ public class TextShapeEditingView: UIView {
   public let deleteControlView = UIView()
   /// Lower right 'rotate' button for text. You may add any subviews you want,
   /// set border & background color, etc.
-  public let resizeAndRotateControlView = UIView()
+//  public let resizeAndRotateControlView = UIView()
   /// Right side handle to change width of text. You may add any subviews you
   /// want, set border & background color, etc.
-  public let changeWidthControlView = UIView()
+//  public let changeWidthControlView = UIView()
 
   /// The `UITextView` that the user interacts with during editing
   public let textView: UITextView
@@ -48,11 +48,11 @@ public class TextShapeEditingView: UIView {
     deleteControlView.translatesAutoresizingMaskIntoConstraints = false
     deleteControlView.backgroundColor = .red
 
-    resizeAndRotateControlView.translatesAutoresizingMaskIntoConstraints = false
-    resizeAndRotateControlView.backgroundColor = .white
-
-    changeWidthControlView.translatesAutoresizingMaskIntoConstraints = false
-    changeWidthControlView.backgroundColor = .yellow
+//    resizeAndRotateControlView.translatesAutoresizingMaskIntoConstraints = false
+//    resizeAndRotateControlView.backgroundColor = .white
+//
+//    changeWidthControlView.translatesAutoresizingMaskIntoConstraints = false
+//    changeWidthControlView.backgroundColor = .yellow
 
     addSubview(textView)
 
@@ -92,23 +92,23 @@ public class TextShapeEditingView: UIView {
       ]))
     }
 
-    addControl(dragActionType: .resizeAndRotate, view: resizeAndRotateControlView) { (textView, resizeAndRotateControlView) in
-      NSLayoutConstraint.activate(deprioritize([
-        resizeAndRotateControlView.widthAnchor.constraint(equalToConstant: 36),
-        resizeAndRotateControlView.heightAnchor.constraint(equalToConstant: 36),
-        resizeAndRotateControlView.leftAnchor.constraint(equalTo: textView.rightAnchor, constant: 5),
-        resizeAndRotateControlView.topAnchor.constraint(equalTo: textView.bottomAnchor, constant: 4),
-      ]))
-    }
-
-    addControl(dragActionType: .changeWidth, view: changeWidthControlView) { (textView, changeWidthControlView) in
-      NSLayoutConstraint.activate(deprioritize([
-        changeWidthControlView.widthAnchor.constraint(equalToConstant: 36),
-        changeWidthControlView.heightAnchor.constraint(equalToConstant: 36),
-        changeWidthControlView.leftAnchor.constraint(equalTo: textView.rightAnchor, constant: 5),
-        changeWidthControlView.bottomAnchor.constraint(equalTo: textView.topAnchor, constant: -4),
-      ]))
-    }
+//    addControl(dragActionType: .resizeAndRotate, view: resizeAndRotateControlView) { (textView, resizeAndRotateControlView) in
+//      NSLayoutConstraint.activate(deprioritize([
+//        resizeAndRotateControlView.widthAnchor.constraint(equalToConstant: 36),
+//        resizeAndRotateControlView.heightAnchor.constraint(equalToConstant: 36),
+//        resizeAndRotateControlView.leftAnchor.constraint(equalTo: textView.rightAnchor, constant: 5),
+//        resizeAndRotateControlView.topAnchor.constraint(equalTo: textView.bottomAnchor, constant: 4),
+//      ]))
+//    }
+//
+//    addControl(dragActionType: .changeWidth, view: changeWidthControlView) { (textView, changeWidthControlView) in
+//      NSLayoutConstraint.activate(deprioritize([
+//        changeWidthControlView.widthAnchor.constraint(equalToConstant: 36),
+//        changeWidthControlView.heightAnchor.constraint(equalToConstant: 36),
+//        changeWidthControlView.leftAnchor.constraint(equalTo: textView.rightAnchor, constant: 5),
+//        changeWidthControlView.bottomAnchor.constraint(equalTo: textView.topAnchor, constant: -4),
+//      ]))
+//    }
   }
 
   public func addControl<T: UIView>(dragActionType: DragActionType, view: T, applyConstraints: (UITextView, T) -> Void) {

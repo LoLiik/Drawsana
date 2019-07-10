@@ -142,9 +142,9 @@ class ChangeWidthHandler: DragHandler {
     // hard to do with some working knowledge of linear algebra and trigonometry,
     // but it didn't make the cut for initial release.
     let distanceFromShapeCenter = (point - translatedBoundingRect.middle).length
-    let desiredWidthInScreenCoordinates = (
-      distanceFromShapeCenter - textTool.editingView.changeWidthControlView.frame.size.width / 2) * 2
-    shape.explicitWidth = desiredWidthInScreenCoordinates / shape.transform.scale
+//    let desiredWidthInScreenCoordinates = (
+//      distanceFromShapeCenter - textTool.editingView.changeWidthControlView.frame.size.width / 2) * 2
+//    shape.explicitWidth = desiredWidthInScreenCoordinates / shape.transform.scale
     textTool.updateShapeFrame()
   }
 
