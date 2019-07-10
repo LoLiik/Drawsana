@@ -195,8 +195,19 @@ public class DrawsanaView: UIView {
     selectionIndicatorView.isHidden = true
 
     let panGR = ImmediatePanGestureRecognizer(target: self, action: #selector(didPan(sender:)))
+    panGR.cancelsTouchesInView = false
+    panGR.delegate = self
     addGestureRecognizer(panGR)
-  }
+
+    let pinchGR = UIPinchGestureRecognizer(target: self, action: #selector(didPinch(sender:)))
+    pinchGR.delegate = self
+    addGestureRecognizer(pinchGR)
+
+    let rotateGR = UIRotationGestureRecognizer(target: self, action: #selector(didRotate(sender:)))
+    rotateGR.delegate = self
+    addGestureRecognizer(rotateGR)
+
+    }
 
   public override func layoutSubviews() {
     super.layoutSubviews()
@@ -303,6 +314,107 @@ public class DrawsanaView: UIView {
 
     applyToolSettingsChanges()
   }
+
+    @objc private func didPinch(sender: UIPinchGestureRecognizer) {
+        autoreleasepool { _didPinch(sender: sender) }
+    }
+
+    private func _didPinch(sender: UIPinchGestureRecognizer) {
+        guard let tool = tool, let resizableTool = tool as? ResizableTool else { return }
+
+        let updateUncommittedShapeBuffers: () -> Void = {
+            self.transientBufferWithShapeInProgress = DrawsanaUtilities.renderImage(size: self.drawing.size) {
+                self.transientBuffer?.draw(at: .zero)
+                self.tool?.renderShapeInProgress(transientContext: $0)
+            }
+            self.drawingContentView.layer.contents = self.transientBufferWithShapeInProgress?.cgImage
+            if self.tool?.isProgressive == true {
+                self.transientBuffer = self.transientBufferWithShapeInProgress
+            }
+        }
+
+        let scale = sender.scale
+        switch sender.state {
+        case .began:
+            if let persistentBuffer = persistentBuffer, let cgImage = persistentBuffer.cgImage {
+                transientBuffer = UIImage(
+                    cgImage: cgImage,
+                    scale: persistentBuffer.scale,
+                    orientation: persistentBuffer.imageOrientation)
+            } else {
+                transientBuffer = nil
+            }
+            resizableTool.handleResizeStart(context: toolOperationContext, scale: scale)
+            updateUncommittedShapeBuffers()
+        case .changed:
+            resizableTool.handleResizeContinue(context: toolOperationContext, scale: scale, velocity: sender.velocity)
+            updateUncommittedShapeBuffers()
+        case .ended:
+            resizableTool.handleResizeEnd(context: toolOperationContext, scale: scale)
+            sender.scale = 1
+            reapplyLayerContents()
+        case .failed:
+            resizableTool.handleResizeCancel(context: toolOperationContext, scale: scale)
+            sender.scale = 1
+            reapplyLayerContents()
+        default:
+            assert(false, "State not handled")
+        }
+
+        applyToolSettingsChanges()
+    }
+
+
+    @objc private func didRotate(sender: UIRotationGestureRecognizer) {
+        autoreleasepool { _didRotate(sender: sender) }
+    }
+
+    private func _didRotate(sender: UIRotationGestureRecognizer) {
+        guard let tool = tool, let rotatableTool = tool as? RotatableTool else { return }
+
+        let updateUncommittedShapeBuffers: () -> Void = {
+            self.transientBufferWithShapeInProgress = DrawsanaUtilities.renderImage(size: self.drawing.size) {
+                self.transientBuffer?.draw(at: .zero)
+                self.tool?.renderShapeInProgress(transientContext: $0)
+            }
+            self.drawingContentView.layer.contents = self.transientBufferWithShapeInProgress?.cgImage
+            if self.tool?.isProgressive == true {
+                self.transientBuffer = self.transientBufferWithShapeInProgress
+            }
+        }
+
+        let rotate = sender.rotation
+        switch sender.state {
+        case .began:
+            if let persistentBuffer = persistentBuffer, let cgImage = persistentBuffer.cgImage {
+                transientBuffer = UIImage(
+                    cgImage: cgImage,
+                    scale: persistentBuffer.scale,
+                    orientation: persistentBuffer.imageOrientation)
+            } else {
+                transientBuffer = nil
+            }
+            rotatableTool.handleRotateStart(context: toolOperationContext, rotation: rotate)
+            delegate?.drawsanaView(self, didStartDragWith: tool)
+            updateUncommittedShapeBuffers()
+        case .changed:
+            rotatableTool.handleRotateContinue(context: toolOperationContext, rotation: rotate, velocity: sender.velocity)
+            updateUncommittedShapeBuffers()
+        case .ended:
+            rotatableTool.handleRotateEnd(context: toolOperationContext, rotation: rotate)
+            delegate?.drawsanaView(self, didEndDragWith: tool)
+            sender.rotation = 0
+            reapplyLayerContents()
+        case .failed:
+            rotatableTool.handleRotateCancel(context: toolOperationContext, rotation: rotate)
+            sender.rotation = 0
+            reapplyLayerContents()
+        default:
+            assert(false, "State not handled")
+        }
+
+        applyToolSettingsChanges()
+    }
 
   // MARK: Making stuff show up
 
@@ -485,4 +597,13 @@ extension DrawsanaView: UserSettingsDelegate {
  */
 public protocol DrawsanaViewShapeUpdating: AnyObject {
   func rerenderAllShapesInefficiently()
+}
+
+extension DrawsanaView: UIGestureRecognizerDelegate{
+
+    @objc(gestureRecognizer:shouldRecognizeSimultaneouslyWithGestureRecognizer:) //Fix Xcode bug that Objective-C optional protocol method not called
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        return true
+    }
+
 }

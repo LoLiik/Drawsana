@@ -52,6 +52,9 @@ public class TextTool: NSObject, DrawingTool {
   /// touch starts. See `DragHandler.swift` for their implementations.
   private var dragHandler: DragHandler?
   private var selectedShape: TextShape?
+  private var rotationHandler: RotationHandler?
+  private var resizeHandler: ResizeHandler?
+  private var originalTransform: ShapeTransform?
   private var originalText = ""
   private var maxWidth: CGFloat = 320  // updated from drawing.size
   private weak var shapeUpdater: DrawsanaViewShapeUpdating?
@@ -336,4 +339,80 @@ extension TextTool: UITextViewDelegate {
     selectedShape?.isBeingEdited = false
     return true
   }
+}
+
+// MARK: Handle pinch
+
+extension TextTool: ResizableTool{
+
+    public func handleResizeStart(context: ToolOperationContext, scale: CGFloat){
+        guard let shape = selectedShape else { return }
+        self.resizeHandler = ResizeHandler(shape: shape, textTool: self)
+    }
+
+    /// User has continued to drag on the drawing
+    public func handleResizeContinue(context: ToolOperationContext, scale: CGFloat, velocity: CGFloat){
+        if let resizeHandler = resizeHandler {
+            resizeHandler.handleResizeContinue(context: context, scale: scale)
+        }
+    }
+
+    /// User has stopped to drag on the drawing
+    public func handleResizeEnd(context: ToolOperationContext, scale: CGFloat){
+        if let resizeHandler = resizeHandler  {
+            resizeHandler.handleResizeEnd(context: context, scale: scale)
+            self.resizeHandler = nil
+        }
+        context.toolSettings.isPersistentBufferDirty = true
+        updateTextView()
+    }
+
+    /// User has canceled to pinch on the drawing
+    public func handleResizeCancel(context: ToolOperationContext, scale: CGFloat){
+        if let resizeHandler = resizeHandler {
+            resizeHandler.handleResizeCancel(context: context, scale: scale)
+            self.resizeHandler = nil
+        }
+    }
+}
+
+// MARK: Rotate Handler
+
+extension TextTool: RotatableTool{
+
+    public func handleRotateStart(context: ToolOperationContext, rotation: CGFloat){
+        guard let shape = selectedShape else { return }
+        originalTransform = shape.transform
+        self.rotationHandler = RotationHandler(shape: shape, textTool: self)
+    }
+
+    /// User has continued to rotate on the drawing
+    public func handleRotateContinue(context: ToolOperationContext, rotation: CGFloat, velocity: CGFloat){
+        if let rotationHandler = rotationHandler {
+            rotationHandler.handleRotateContinue(context: context, rotation: rotation)
+            if let shape = context.toolSettings.selectedShape as? TextShape, let originalTransform = originalTransform {
+                shape.transform = originalTransform.rotated(by: rotation)
+                context.toolSettings.isPersistentBufferDirty = true
+            }
+        }
+    }
+
+    /// User has stopped to rotate on the drawing
+    public func handleRotateEnd(context: ToolOperationContext, rotation: CGFloat){
+        if let rotationHandler = rotationHandler  {
+            rotationHandler.handleRotateEnd(context: context, rotation: rotation)
+            self.rotationHandler = nil
+            originalTransform = nil
+        }
+        context.toolSettings.isPersistentBufferDirty = true
+        updateTextView()
+    }
+
+    /// User has canceled to rotate on the drawing
+    public func handleRotateCancel(context: ToolOperationContext, rotation: CGFloat){
+        if let rotationHandler = rotationHandler {
+            rotationHandler.handleRotateCancel(context: context, rotation: rotation)
+            self.rotationHandler = nil
+        }
+    }
 }
