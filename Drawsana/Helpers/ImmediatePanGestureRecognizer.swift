@@ -107,3 +107,102 @@ class ImmediatePanGestureRecognizer: UIGestureRecognizer {
     hasExceededTapThreshold = false
   }
 }
+
+class PinchRotateGestureRecognizer: UIGestureRecognizer{
+
+    var firstTrackedTouch: UITouch? = nil
+    var secondTrackedTouch: UITouch? = nil
+    var firstTouchStartPoint: CGPoint = .zero
+    var secondTouchStartPoint: CGPoint = .zero
+    var firstTouchEndPoint: CGPoint {
+        if let view = view, let firstTrackedTouch = firstTrackedTouch{
+            return firstTrackedTouch.location(in: view)
+        } else {
+            return .zero
+        }
+    }
+    var secondTouchEndPoint: CGPoint {
+        if let view = view, let secondTrackedTouch = secondTrackedTouch{
+            return secondTrackedTouch.location(in: view)
+        } else {
+            return .zero
+        }
+    }
+
+    private var startLength: CGFloat{
+        return hypot(secondTouchStartPoint.x - firstTouchStartPoint.x, secondTouchStartPoint.y - firstTouchStartPoint.y)
+    }
+
+    var scale: CGFloat {
+        return hypot(secondTouchEndPoint.x - firstTouchEndPoint.x, secondTouchEndPoint.y - firstTouchEndPoint.y) / startLength
+    }
+    var rotation: CGFloat {
+        return angleBetweenLinesInRadians(line1Start: firstTouchStartPoint, line1End: secondTouchStartPoint, line2Start: firstTouchEndPoint, line2End: secondTouchEndPoint)
+    }
+
+    private func angleBetweenLinesInRadians( line1Start: CGPoint, line1End: CGPoint, line2Start: CGPoint, line2End: CGPoint) -> CGFloat {
+        let a0 = atan2(Double(line1Start.y - line1End.y), Double(line1Start.x - line1End.x))
+        let a1 = atan2(Double(line2Start.y - line2End.y), Double(line2Start.x - line2End.x))
+
+        return CGFloat(a1 - a0)
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        guard touches.count == 2, let view = view else {
+            return
+        }
+
+        firstTrackedTouch = touches.first
+        for touch in touches{
+            if touch != firstTrackedTouch{
+                secondTrackedTouch = touch
+            }
+        }
+
+        firstTouchStartPoint = firstTrackedTouch!.location(in: view)
+        secondTouchStartPoint = secondTrackedTouch!.location(in: view)
+
+        state = .began
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+        guard state == .began || state == .changed,
+            touches.count == 2,
+            let firstTrackedTouch = firstTrackedTouch,
+            let secondTrackedTouch = secondTrackedTouch,
+            touches.contains(firstTrackedTouch),
+            touches.contains(secondTrackedTouch)
+            else
+        {
+            return
+        }
+
+        state = .changed
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+        guard state == .began || state == .changed,
+            touches.count == 2,
+            let firstTrackedTouch = firstTrackedTouch,
+            let secondTrackedTouch = secondTrackedTouch,
+            touches.contains(firstTrackedTouch),
+            touches.contains(secondTrackedTouch)
+            else
+        {
+            state = .failed
+            return
+        }
+
+        state = .ended
+
+        DispatchQueue.main.async {
+            self.reset()
+        }
+    }
+
+    override func reset() {
+        super.reset()
+        firstTrackedTouch = nil
+        secondTrackedTouch = nil
+    }
+}

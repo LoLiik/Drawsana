@@ -26,8 +26,7 @@ public class SelectionTool: DrawingTool {
   public weak var delegate: SelectionToolDelegate?
 
   private var originalTransform: ShapeTransform?
-  private var rotationHandler: RotationHandler?
-  private var resizeHandler: ResizeHandler?
+  private var transformHandler: TransformHandler?
   private var startPoint: CGPoint?
   /* When you tap away from a shape you've just dragged, the method calls look
      like this:
@@ -149,88 +148,43 @@ public class SelectionTool: DrawingTool {
 
 // MARK: Handle pinch
 
-extension SelectionTool: ResizableTool{
+extension SelectionTool: TransformableTool{
 
-    public func handleResizeStart(context: ToolOperationContext, scale: CGFloat){
+    public func handleTransformStart(context: ToolOperationContext, scale: CGFloat, rotation: CGFloat){
         guard let shape = context.toolSettings.selectedShape as? TextShape else { return }
         originalTransform = shape.transform
-        self.resizeHandler = ResizeHandler(shape: shape)
+        self.transformHandler = TransformHandler(shape: shape)
     }
 
-    /// User has continued to pinch on the drawing
-    public func handleResizeContinue(context: ToolOperationContext, scale: CGFloat, velocity: CGFloat){
-        if let resizeHandler = resizeHandler {
-            resizeHandler.handleResizeContinue(context: context, scale: scale)
+    /// User has continued to drag on the drawing
+    public func handleTransformContinue(context: ToolOperationContext, scale: CGFloat, rotation: CGFloat){
+        if let transformHandler = transformHandler {
+            transformHandler.handleTransformContinue(context: context, scale: scale, rotation: rotation)
             if let shape = context.toolSettings.selectedShape as? TextShape, let originalTransform = originalTransform {
-                shape.transform = originalTransform.scaled(by: scale)
+                let transform = originalTransform.scaled(by: scale).rotated(by: rotation)
+                shape.transform = transform
                 context.toolSettings.isPersistentBufferDirty = true
             }
         }
     }
 
-    /// User has stopped to pinch on the drawing
-    public func handleResizeEnd(context: ToolOperationContext, scale: CGFloat){
-        if let resizeHandler = resizeHandler  {
-            resizeHandler.handleResizeEnd(context: context, scale: scale)
-            self.resizeHandler = nil
-            originalTransform = nil
-        }
-        context.toolSettings.isPersistentBufferDirty = true
-        //        updateTextView()
-    }
-
-    /// The gesture has canceled for some reason. The intended use case is
-    /// for when the user pull a second finger up, and this becomes a drag
-    /// instead of a pinch.
-    ///
-    /// You probably want to clean up all in-progress updates and reset to a state
-    /// as if the drag had never begun.
-    public func handleResizeCancel(context: ToolOperationContext, scale: CGFloat){
-        if let resizeHandler = resizeHandler {
-            resizeHandler.handleResizeCancel(context: context, scale: scale)
-            originalTransform = nil
-            self.resizeHandler = nil
-        }
-    }
-}
-
-// MARK: Rotate Handler
-
-extension SelectionTool: RotatableTool{
-
-    public func handleRotateStart(context: ToolOperationContext, rotation: CGFloat){
-        guard let shape = context.toolSettings.selectedShape as? TextShape else { return }
-        originalTransform = shape.transform
-        self.rotationHandler = RotationHandler(shape: shape)
-    }
-
-    /// User has continued to rotate on the drawing
-    public func handleRotateContinue(context: ToolOperationContext, rotation: CGFloat, velocity: CGFloat){
-        if let rotationHandler = rotationHandler {
-            rotationHandler.handleRotateContinue(context: context, rotation: rotation)
-            if let shape = context.toolSettings.selectedShape as? TextShape, let originalTransform = originalTransform {
-                shape.transform = originalTransform.rotated(by: rotation)
-                context.toolSettings.isPersistentBufferDirty = true
-            }
-
-        }
-    }
-
-    /// User has stopped to rotate on the drawing
-    public func handleRotateEnd(context: ToolOperationContext, rotation: CGFloat){
-        let deltaRotation = rotation // FIXME
-        if let rotationHandler = rotationHandler  {
-            rotationHandler.handleRotateEnd(context: context, rotation: deltaRotation)
-            self.rotationHandler = nil
+    /// User has stopped to drag on the drawing
+    public func handleTransformEnd(context: ToolOperationContext, scale: CGFloat, rotation: CGFloat){
+        if let tranformHandler = transformHandler  {
+            tranformHandler.handleTransformEnd(context: context, scale: scale, rotation: rotation)
+            self.transformHandler = nil
             originalTransform = nil
         }
         context.toolSettings.isPersistentBufferDirty = true
     }
 
-    public func handleRotateCancel(context: ToolOperationContext, rotation: CGFloat){
-        if let rotationHandler = rotationHandler {
-            rotationHandler.handleRotateCancel(context: context, rotation: rotation)
-            self.rotationHandler = nil
+    /// User has canceled to pinch on the drawing
+    public func handleTransformCancel(context: ToolOperationContext, scale: CGFloat, rotation: CGFloat){
+        if let transformHandler = transformHandler {
+            transformHandler.handleTransformCancel(context: context, scale: scale, rotation: rotation)
+            self.transformHandler = nil
+            originalTransform = nil
         }
+        context.toolSettings.isPersistentBufferDirty = true
     }
 }

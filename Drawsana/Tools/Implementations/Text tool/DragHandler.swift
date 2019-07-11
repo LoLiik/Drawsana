@@ -147,45 +147,20 @@ class ChangeWidthHandler: DragHandler {
 //    shape.explicitWidth = desiredWidthInScreenCoordinates / shape.transform.scale
     textTool.updateShapeFrame()
   }
-
-  override func handleDragEnd(context: ToolOperationContext, point: CGPoint) {
-    context.operationStack.apply(operation: ChangeExplicitWidthOperation(
-      shape: shape,
-      originalWidth: originalWidth,
-      originalBoundingRect: originalBoundingRect,
-      newWidth: shape.explicitWidth,
-      newBoundingRect: shape.boundingRect))
-  }
-
-  override func handleDragCancel(context: ToolOperationContext, point: CGPoint) {
-    shape.explicitWidth = originalWidth
-    shape.boundingRect = originalBoundingRect
-    context.toolSettings.isPersistentBufferDirty = true
-    textTool?.updateTextView()
-  }
 }
 
-protocol RotatableTool {
-    func handleRotateStart(context: ToolOperationContext, rotation: CGFloat)
 
-    func handleRotateContinue(context: ToolOperationContext, rotation: CGFloat, velocity: CGFloat)
+protocol TransformableTool {
+    func handleTransformStart(context: ToolOperationContext, scale: CGFloat, rotation: CGFloat)
 
-    func handleRotateEnd(context: ToolOperationContext, rotation: CGFloat)
+    func handleTransformContinue(context: ToolOperationContext, scale: CGFloat, rotation: CGFloat)
 
-    func handleRotateCancel(context: ToolOperationContext, rotation: CGFloat)
+    func handleTransformEnd(context: ToolOperationContext, scale: CGFloat, rotation: CGFloat)
+
+    func handleTransformCancel(context: ToolOperationContext, scale: CGFloat, rotation: CGFloat)
 }
 
-protocol ResizableTool {
-    func handleResizeStart(context: ToolOperationContext, scale: CGFloat)
-
-    func handleResizeContinue(context: ToolOperationContext, scale: CGFloat, velocity: CGFloat)
-
-    func handleResizeEnd(context: ToolOperationContext, scale: CGFloat)
-
-    func handleResizeCancel(context: ToolOperationContext, scale: CGFloat)
-}
-
-class RotationHandler{
+class TransformHandler{
     let shape: ShapeSelectable
     weak var textTool: TextTool?
     var startPoint: CGPoint = .zero
@@ -200,56 +175,28 @@ class RotationHandler{
         self.originalTransform = shape.transform
     }
 
-    func handleRotateContinue(context: ToolOperationContext, rotation: CGFloat) {
-        shape.transform = originalTransform.rotated(by: rotation)
-        textTool?.updateTextView()
+    func handleTransformContinue(context: ToolOperationContext, scale: CGFloat, rotation: CGFloat) {
+        shape.transform = originalTransform.scaled(by: scale).rotated(by: rotation)
+        textTool?.updateShapeFrame()
     }
 
-    func handleRotateEnd(context: ToolOperationContext, rotation: CGFloat) {
+    func handleTransformEnd(context: ToolOperationContext, scale: CGFloat, rotation: CGFloat) {
         context.operationStack.apply(operation: ChangeTransformOperation(
             shape: shape,
-            transform: originalTransform.rotated(by: rotation),
+            transform: originalTransform.scaled(by: scale).rotated(by: rotation),
             originalTransform: originalTransform))
     }
 
-    func handleRotateCancel(context: ToolOperationContext, rotation: CGFloat) {
+    func handleTransformCancel(context: ToolOperationContext, scale: CGFloat, rotation: CGFloat) {
         shape.transform = originalTransform
         context.toolSettings.isPersistentBufferDirty = true
         textTool?.updateShapeFrame()
     }
 }
 
-class ResizeHandler{
-    let shape: ShapeSelectable
-    weak var textTool: TextTool?
-    var startPoint: CGPoint = .zero
-    private var originalTransform: ShapeTransform
 
-    init(
-        shape: ShapeSelectable,
-        textTool: TextTool? = nil)
-    {
-        self.shape = shape
-        self.textTool = textTool
-        self.originalTransform = shape.transform
-    }
 
-    func handleResizeContinue(context: ToolOperationContext, scale: CGFloat) {
-        shape.transform = originalTransform.scaled(by: scale)
-        textTool?.updateTextView()
-    }
 
-    func handleResizeEnd(context: ToolOperationContext, scale: CGFloat) {
-        context.operationStack.apply(operation: ChangeTransformOperation(
-            shape: shape,
-            transform: originalTransform.scaled(by: scale),
-            originalTransform: originalTransform))
-    }
 
-    func handleResizeCancel(context: ToolOperationContext, scale: CGFloat) {
-        shape.transform = originalTransform
-        context.toolSettings.isPersistentBufferDirty = true
-        textTool?.updateShapeFrame()
-    }
-}
+
 
