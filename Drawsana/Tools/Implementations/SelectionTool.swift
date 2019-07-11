@@ -71,12 +71,7 @@ public class SelectionTool: DrawingTool {
 
   public func handleTap(context: ToolOperationContext, point: CGPoint) {
     if let selectedShape = context.toolSettings.selectedShape, selectedShape.hitTest(point: point) == true {
-      if let delegate = delegate {
-        delegate.selectionToolDidTapOnAlreadySelectedShape(selectedShape)
-      } else {
-        // Default behavior: deselect the shape
         context.toolSettings.selectedShape = nil
-      }
       return
     }
 
@@ -84,6 +79,12 @@ public class SelectionTool: DrawingTool {
       .compactMap({ $0 as? ShapeSelectable })
       .filter({ $0.hitTest(point: point) })
       .last)
+
+    if let selectedShape = context.toolSettings.selectedShape as? TextShape{
+        if let delegate = delegate{
+            delegate.selectionToolDidTapOnAlreadySelectedShape(selectedShape)
+        }
+    }
   }
 
   public func handleDragStart(context: ToolOperationContext, point: CGPoint) {
@@ -160,11 +161,7 @@ extension SelectionTool: TransformableTool{
     public func handleTransformContinue(context: ToolOperationContext, scale: CGFloat, rotation: CGFloat){
         if let transformHandler = transformHandler {
             transformHandler.handleTransformContinue(context: context, scale: scale, rotation: rotation)
-            if let shape = context.toolSettings.selectedShape as? TextShape, let originalTransform = originalTransform {
-                let transform = originalTransform.scaled(by: scale).rotated(by: rotation)
-                shape.transform = transform
-                context.toolSettings.isPersistentBufferDirty = true
-            }
+            context.toolSettings.isPersistentBufferDirty = true
         }
     }
 
